@@ -30,7 +30,7 @@ spec:
       serviceAccountName: noteapp-sa
       containers:
         - name: dotnet-noteapp
-          image: surajkhanderao/noteapp:v19
+          image: surajkhanderao/noteapp:v20
           ports:
             - containerPort: 5050
           env:
