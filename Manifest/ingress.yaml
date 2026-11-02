@@ -35,4 +35,4 @@ spec:
     - hosts:
         - www.surajdevops.cv
         - surajdevops.cv
-      secretName: adityajaiswal-co-tls
+      secretName: noteapp-co-tls
