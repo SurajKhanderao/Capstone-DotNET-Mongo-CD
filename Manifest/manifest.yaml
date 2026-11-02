@@ -1,41 +1,64 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: noteapp-sa
-  namespace: webapps
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dotnet-noteapp
   namespace: webapps
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: dotnet-noteapp
+
   template:
     metadata:
       labels:
         app: dotnet-noteapp
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "noteapp"
-        vault.hashicorp.com/agent-inject-secret-mongodb__connectionstring: "secret/data/noteapp"
-        vault.hashicorp.com/agent-inject-template-mongodb__connectionstring: |
-          {{- with secret "secret/data/noteapp" -}}
-          {{ .Data.data.mongodb__connectionstring }}
-          {{- end }}
+
     spec:
-      serviceAccountName: noteapp-sa
       containers:
         - name: dotnet-noteapp
           image: surajkhanderao/noteapp:v24
           ports:
             - containerPort: 5050
+
           env:
             - name: DOTNET_ENVIRONMENT
               value: Development
+
+            - name: MongoDB__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongodb__connectionstring
+
+          resources:
+            requests:
+              cpu: "300m"
+              memory: "250Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5050
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5050
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
 ---
 apiVersion: v1
 kind: Service
@@ -49,4 +72,3 @@ spec:
     - port: 80
       targetPort: 5050
   type: ClusterIP
-
